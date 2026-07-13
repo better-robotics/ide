@@ -1,9 +1,11 @@
 import { connect } from "./robot-api.js";
-import { mountEditor, getValue } from "./editor.js";
+import { mountEditor, getValue, setValue, setReadOnly } from "./editor.js";
+import { mountBlocks, getBlocksCode, resizeBlocks, blocksMounted } from "./blocks.js";
 
 const DRAFT_KEY = "ide.draft";
 const HOST_KEY = "ide.host";
 const CREDS_KEY = "ide.creds"; // {username} only — never persist the password
+const MODE_KEY = "ide.mode"; // "blocks" | "code"
 
 const DEFAULT_SCRIPT = `// robot.move({left, right, durationMs}) drives; left/right are signed
 // -255..255, durationMs defaults to 400 and clamps at 4000 (the firmware's
@@ -17,6 +19,7 @@ log("done");
 
 let session = null;
 let running = false;
+let mode = null; // set by setMode during init
 
 function $(id) {
   return document.getElementById(id);
@@ -68,6 +71,40 @@ async function doConnect() {
   }
 }
 
+// Blocks and JS are two separate drafts, not two views of one document — a
+// blocks→JS conversion is easy, but JS→blocks is lossy, so pretending they're
+// the same file would eat hand edits. Run executes whichever view is active.
+function refreshPreview() {
+  if (mode !== "blocks") return;
+  setValue("// the JavaScript your blocks make\n" + getBlocksCode());
+}
+
+function setMode(next) {
+  if (mode === next) return;
+  if (mode === "code") localStorage.setItem(DRAFT_KEY, getValue());
+  mode = next;
+  localStorage.setItem(MODE_KEY, next);
+
+  const isBlocks = next === "blocks";
+  $("mode-blocks").setAttribute("aria-pressed", String(isBlocks));
+  $("mode-code").setAttribute("aria-pressed", String(!isBlocks));
+  $("editor-pane").classList.toggle("blocks", isBlocks);
+  $("blockly").hidden = !isBlocks;
+  $("preview-label").hidden = !isBlocks;
+
+  if (isBlocks) {
+    // Inject on first entry, not at startup — Blockly sizes itself from the
+    // host div, which must be visible and laid out.
+    if (!blocksMounted()) mountBlocks($("blockly"), { onChange: refreshPreview });
+    resizeBlocks();
+    setReadOnly(true);
+    refreshPreview();
+  } else {
+    setReadOnly(false);
+    setValue(localStorage.getItem(DRAFT_KEY) || DEFAULT_SCRIPT);
+  }
+}
+
 async function runScript() {
   if (running) return;
   if (!session) {
@@ -80,8 +117,8 @@ async function runScript() {
   runBtn.textContent = "Running…";
   $("console").replaceChildren();
 
-  const body = getValue();
-  localStorage.setItem(DRAFT_KEY, body);
+  const body = mode === "blocks" ? getBlocksCode() : getValue();
+  if (mode === "code") localStorage.setItem(DRAFT_KEY, body);
   // A team's own robot (session.ownId) is known the moment we're connected —
   // list it first regardless of whether telemetry has arrived yet, so
   // `robot` (robots[0]) is never null just because the rover hasn't
@@ -135,11 +172,24 @@ async function init() {
     doConnect();
   });
   $("run-btn").addEventListener("click", runScript);
+  $("mode-blocks").addEventListener("click", () => setMode("blocks"));
+  $("mode-code").addEventListener("click", () => setMode("code"));
+  // Ctrl/Cmd-Enter runs from blocks mode too (Monaco owns the shortcut only
+  // while focused; runScript's `running` guard absorbs the double fire).
+  document.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") runScript();
+  });
 
   await mountEditor($("editor"), {
     initialValue: localStorage.getItem(DRAFT_KEY) || DEFAULT_SCRIPT,
     onRun: runScript,
   });
+  // Blocks for first-timers — the classroom on-ramp; anyone with a typed
+  // draft from before this view existed keeps landing in JS.
+  setMode(
+    localStorage.getItem(MODE_KEY) ||
+      (localStorage.getItem(DRAFT_KEY) ? "code" : "blocks")
+  );
 }
 
 init();

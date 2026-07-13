@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 
 MONACO_VERSION=0.55.1
 MQTT_VERSION=5.15.2
+BLOCKLY_VERSION=12.3.1
 
 rm -rf vendor
 mkdir -p vendor
@@ -22,5 +23,18 @@ cp -R "$tmp/package/min" vendor/monaco-editor/min
 
 echo "→ mqtt.js@${MQTT_VERSION} (browser UMD bundle — the same library dashboard.html inlines)"
 curl -fsSL "https://cdn.jsdelivr.net/npm/mqtt@${MQTT_VERSION}/dist/mqtt.min.js" -o vendor/mqtt.min.js
+
+echo "→ blockly@${BLOCKLY_VERSION} (UMD script bundles + en messages + media sprites)"
+curl -fsSL "https://registry.npmjs.org/blockly/-/blockly-${BLOCKLY_VERSION}.tgz" -o "$tmp/blockly.tgz"
+mkdir -p "$tmp/blockly"
+tar -xzf "$tmp/blockly.tgz" -C "$tmp/blockly"
+mkdir -p vendor/blockly/msg
+cp "$tmp/blockly/package/blockly_compressed.js" \
+   "$tmp/blockly/package/blocks_compressed.js" \
+   "$tmp/blockly/package/javascript_compressed.js" vendor/blockly/
+cp "$tmp/blockly/package/msg/en.js" vendor/blockly/msg/
+# media/ must be vendored: Blockly's default media path is a remote URL, and
+# the injection option in blocks.js points here instead.
+cp -R "$tmp/blockly/package/media" vendor/blockly/media
 
 echo "✓ vendored. Serve the repo root (e.g. \`npx serve\`) and open /index.html"

@@ -19,6 +19,12 @@
   </header>
   <main>
     <section id="editor-pane">
+      <div class="pane-bar">
+        <button id="mode-blocks" type="button" aria-pressed="false">Blocks</button>
+        <button id="mode-code" type="button" aria-pressed="false">JS</button>
+      </div>
+      <div id="blockly" hidden></div>
+      <div id="preview-label" hidden>the JavaScript your blocks make — press JS to write it by hand</div>
       <div id="editor"></div>
       <button id="run-btn" type="button">Run</button>
     </section>
@@ -30,6 +36,15 @@
     </aside>
   </main>
   <script src="vendor/mqtt.min.js"></script>
+  <!-- Blockly's UMD wrappers take the AMD branch if window.define exists —
+       and Monaco's AMD loader defines exactly that. These must stay parser
+       scripts ahead of app.js (a module, so it runs after them), which is
+       what keeps Monaco's loader from existing yet. Order within the four is
+       also fixed: core → blocks → generator → messages. -->
+  <script src="vendor/blockly/blockly_compressed.js"></script>
+  <script src="vendor/blockly/blocks_compressed.js"></script>
+  <script src="vendor/blockly/javascript_compressed.js"></script>
+  <script src="vendor/blockly/msg/en.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

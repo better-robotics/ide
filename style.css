@@ -93,9 +93,46 @@ main {
   border-right: 1px solid var(--border);
 }
 
+.pane-bar {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pane-bar button {
+  font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
+  color: var(--ink-dim);
+}
+
+.pane-bar button[aria-pressed="true"] {
+  color: var(--ink);
+  border-color: var(--accent);
+  background: #1d2d50;
+}
+
+#blockly {
+  flex: 3;
+  min-height: 0;
+}
+
+#preview-label {
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  padding: 0.25rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
 #editor {
   flex: 1;
   min-height: 0;
+}
+
+/* Blocks mode: workspace on top, generated-JS preview (read-only Monaco)
+   below — the ramp from blocks to typed code. */
+#editor-pane.blocks #editor {
+  flex: 1.4;
 }
 
 #editor-pane > button {
@@ -148,4 +185,8 @@ main {
   main { flex-direction: column; }
   #editor-pane { border-right: none; border-bottom: 1px solid var(--border); flex: 2; }
   #side-pane { flex: 1; }
+  /* No room for workspace + preview on a phone — blocks mode drops the
+     preview; the JS view still has it all. */
+  #editor-pane.blocks #editor,
+  #editor-pane.blocks #preview-label { display: none; }
 }

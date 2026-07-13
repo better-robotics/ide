@@ -17,11 +17,26 @@ from a code editor instead of a joystick.
 
 ## No CDN, ever, at runtime
 
-`vendor.sh` fetches Monaco (`min/vs`, AMD loader) and mqtt.js (UMD bundle) into
-`vendor/` — gitignored, fetched once locally, and re-fetched by CI before
-publishing. The classroom hub has no internet uplink; a page that reaches out
-to a CDN mid-session breaks the exact case this project is for. (Workbench's
-own editor pane CDN-loads CodeMirror from esm.sh — don't repeat that here.)
+`vendor.sh` fetches Monaco (`min/vs`, AMD loader), mqtt.js (UMD bundle), and
+Blockly (UMD bundles + `msg/en` + `media/`) into `vendor/` — gitignored,
+fetched once locally, and re-fetched by CI before publishing. The classroom
+hub has no internet uplink; a page that reaches out to a CDN mid-session
+breaks the exact case this project is for. (Workbench's own editor pane
+CDN-loads CodeMirror from esm.sh — don't repeat that here.) Two Blockly
+specifics: its default `media` path is a **remote URL** — `blocks.js` must
+keep pointing injection at `vendor/blockly/media/`; and its UMD wrappers take
+the AMD branch if `window.define` exists, which Monaco's loader defines — the
+script ordering that prevents this is commented in `index.html`.
+
+## Blocks view — an on-ramp, not a second API
+
+`blocks.js` generators must emit the same readable JS a student would type
+against `robot-api.js` (`await robot.move({...})`, `sleep`, `log`) — if a
+block needs anything the code view doesn't teach, it doesn't belong. Blocks
+and JS are two separate localStorage drafts (`ide.blocks` / `ide.draft`),
+never two views of one document: blocks→JS is the read-only preview under the
+workspace; JS→blocks doesn't exist (lossy). Run executes whichever view is
+active through the same `AsyncFunction` runner.
 
 ## Run model — no sandbox, and that's deliberate
 

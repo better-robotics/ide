@@ -33,3 +33,13 @@ export async function mountEditor(host, { initialValue, onRun }) {
 export function getValue() {
   return editor ? editor.getValue() : "";
 }
+
+export function setValue(value) {
+  if (editor) editor.setValue(value);
+}
+
+// Blocks mode shows the generated JS here read-only — a preview, not a
+// second editable copy that could drift from the blocks.
+export function setReadOnly(readOnly) {
+  if (editor) editor.updateOptions({ readOnly });
+}

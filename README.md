@@ -1,9 +1,10 @@
 # ide
 
-Monaco in the browser, driving a rover over the existing wire — the classroom
-code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub).
-Students write plain JS calling a small `robot` API; the script runs entirely
-in the tab and talks to the hub over the same MQTT/WebSocket contract
+Monaco + Blockly in the browser, driving a rover over the existing wire — the
+classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub).
+Students write plain JS calling a small `robot` API — or snap blocks together
+in a Scratch-like view that generates that same JS — and the script runs
+entirely in the tab, talking to the hub over the same MQTT/WebSocket contract
 `dashboard.html` already drives. **The rover firmware needs no changes to
 support this** — it's a second client of an existing contract, not a new
 device capability.
@@ -21,11 +22,23 @@ hub and the ESP32 hub role.
 
 | piece | job |
 |---|---|
-| `index.html` / `style.css` | the shell — connection bar, editor pane, console + telemetry pane |
+| `index.html` / `style.css` | the shell — connection bar, Blocks/JS toggle, editor pane, console + telemetry pane |
 | `editor.js` | mounts vendored Monaco (AMD loader, no CDN) |
+| `blocks.js` | the Blocks view — a Blockly workspace whose generators emit the same `robot`-API JavaScript the code view teaches |
 | `robot-api.js` | the wire client — `mqtt.connect(ws://<host>:9001, …)`, the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry) |
-| `app.js` | glue — connection UI, the run-script model |
-| `vendor.sh` → `vendor/` | Monaco + mqtt.js, fetched once, never loaded from a CDN at runtime |
+| `app.js` | glue — connection UI, the Blocks/JS mode switch, the run-script model |
+| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly, fetched once, never loaded from a CDN at runtime |
+
+## Blocks mode
+
+First-time visitors land in a Blockly workspace (Scratch-like zelos renderer)
+with drive / wait / stop / LED / log / telemetry blocks plus stock loops,
+logic, math, and variables. Below it, a read-only Monaco pane shows **the
+JavaScript the blocks generate, live** — the ramp from blocks to typed code is
+watching your program appear in the real API, then pressing **JS** to write it
+by hand. Blocks and JS are two separate drafts (a JS→blocks conversion would
+be lossy, so neither view can eat the other's edits); **Run executes whichever
+view is active**, through the same runner.
 
 ## The `robot` API
 
@@ -56,7 +69,7 @@ a malformed or malicious script can't out-run the motor timeout.
 ## Run it
 
 ```sh
-./vendor.sh          # fetch Monaco + mqtt.js into vendor/ (once, after clone)
+./vendor.sh          # fetch Monaco + mqtt.js + Blockly into vendor/ (once, after clone)
 npx serve .           # or: python3 -m http.server
 ```
 

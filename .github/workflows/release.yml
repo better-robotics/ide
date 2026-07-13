@@ -22,11 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: ./vendor.sh
-      - run: tar -czf ide-dist.tar.gz --exclude=.git --exclude=.github .
+      # Tarball must land outside the tree it's archiving — tar aborts
+      # ("file changed as we read it") if the output file is a sibling of
+      # the inputs and gets created mid-read.
+      - run: tar -czf /tmp/ide-dist.tar.gz --exclude=.git --exclude=.github .
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${GITHUB_REF_NAME:-manual-$(git rev-parse --short HEAD)}"
           gh release create "$tag" --repo "${{ github.repository }}" \
-            --title "$tag" --generate-notes ide-dist.tar.gz \
-            || gh release upload "$tag" ide-dist.tar.gz --repo "${{ github.repository }}" --clobber
+            --title "$tag" --generate-notes /tmp/ide-dist.tar.gz \
+            || gh release upload "$tag" /tmp/ide-dist.tar.gz --repo "${{ github.repository }}" --clobber

@@ -1,0 +1,38 @@
+name: Deploy Pages
+
+# Runs vendor.sh fresh (Monaco is ~15MB of mostly-unused language files —
+# unlike better-robotics.github.io/flash's small esptool bundle, that's worth
+# fetching at publish time rather than committing to git history) and
+# publishes the static site as a Pages artifact — no gh-pages branch, no
+# build step at serve time, matching the static-dist-only discipline the repo
+# is built around.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./vendor.sh
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

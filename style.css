@@ -1,0 +1,151 @@
+:root {
+  color-scheme: dark;
+  --bg: #1e1e1e;
+  --panel: #252526;
+  --ink: #d4d4d4;
+  --ink-dim: #8a8a8a;
+  --accent: #3b82f6;
+  --ok: #4ade80;
+  --error: #f87171;
+  --border: #3c3c3c;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+h1 {
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.conn {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+input, button {
+  font: inherit;
+  background: var(--panel);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+}
+
+input {
+  width: 10rem;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+button:disabled { opacity: 0.6; cursor: default; }
+
+.chip {
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+.chip.ok { color: var(--ok); border-color: var(--ok); }
+.chip.error { color: var(--error); border-color: var(--error); }
+.chip.pending { color: var(--accent); border-color: var(--accent); }
+
+main {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+#editor-pane {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border-right: 1px solid var(--border);
+}
+
+#editor {
+  flex: 1;
+  min-height: 0;
+}
+
+#editor-pane > button {
+  align-self: flex-end;
+  margin: 0.5rem;
+}
+
+#side-pane {
+  flex: 2;
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 1rem;
+  overflow: auto;
+  min-width: 16rem;
+}
+
+#side-pane h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-dim);
+  margin: 0.75rem 0 0.35rem;
+}
+
+#console {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  min-height: 6rem;
+  max-height: 40%;
+  overflow: auto;
+}
+
+#telemetry {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.5rem;
+  margin: 0;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 700px) {
+  main { flex-direction: column; }
+  #editor-pane { border-right: none; border-bottom: 1px solid var(--border); flex: 2; }
+  #side-pane { flex: 1; }
+}

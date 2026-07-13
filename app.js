@@ -82,7 +82,14 @@ async function runScript() {
 
   const body = getValue();
   localStorage.setItem(DRAFT_KEY, body);
-  const robots = session.knownIds().map(session.robot);
+  // A team's own robot (session.ownId) is known the moment we're connected —
+  // list it first regardless of whether telemetry has arrived yet, so
+  // `robot` (robots[0]) is never null just because the rover hasn't
+  // published its first imu/sys sample.
+  const ids = session.ownId
+    ? [session.ownId, ...session.knownIds().filter((id) => id !== session.ownId)]
+    : session.knownIds();
+  const robots = ids.map(session.robot);
   const robot = robots[0] || null;
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -109,8 +116,17 @@ async function runScript() {
   }
 }
 
+// location.hostname is the right guess when hubd itself serves this page
+// (loaded from hub.local/ide/ → already "hub.local", zero config — same
+// shape dashboard.html uses). It's wrong specifically on the GH Pages copy,
+// where the origin is better-robotics.github.io and has no broker of its
+// own — "hub.local" is the one hostname this project's docs always use.
+function defaultHost() {
+  return /\.github\.io$/.test(location.hostname) ? "hub.local" : location.hostname;
+}
+
 async function init() {
-  $("host-input").value = localStorage.getItem(HOST_KEY) || location.hostname;
+  $("host-input").value = localStorage.getItem(HOST_KEY) || defaultHost();
   const savedCreds = JSON.parse(localStorage.getItem(CREDS_KEY) || "{}");
   if (savedCreds.username) $("team-input").value = savedCreds.username;
 

@@ -96,7 +96,14 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
   return {
     client,
     ready,
+    // A team login's own username IS its robot's id (robots/<team>/… — the
+    // topic scheme, CONTRACT.md § Discovery & isolation) — known the moment
+    // Connect succeeds, no telemetry required. null for professor/anonymous,
+    // which have no single robot of their own.
+    ownId: !username || username === "professor" ? null : username,
     onTelemetry: (fn) => listeners.add(fn),
+    // Robots we've actually heard telemetry FROM — real for a fleet view,
+    // but empty right after connect if nothing has published yet.
     knownIds: () => [...telemetry.keys()],
     robot: (id) => makeRobot(id),
   };

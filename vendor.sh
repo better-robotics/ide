@@ -9,6 +9,7 @@ cd "$(dirname "$0")"
 MONACO_VERSION=0.55.1
 MQTT_VERSION=5.15.2
 BLOCKLY_VERSION=12.3.1
+MICROPYTHON_VERSION=1.28.0-6   # @micropython/micropython-webassembly-pyscript
 
 rm -rf vendor
 mkdir -p vendor
@@ -31,10 +32,17 @@ tar -xzf "$tmp/blockly.tgz" -C "$tmp/blockly"
 mkdir -p vendor/blockly/msg
 cp "$tmp/blockly/package/blockly_compressed.js" \
    "$tmp/blockly/package/blocks_compressed.js" \
-   "$tmp/blockly/package/javascript_compressed.js" vendor/blockly/
+   "$tmp/blockly/package/python_compressed.js" vendor/blockly/
 cp "$tmp/blockly/package/msg/en.js" vendor/blockly/msg/
 # media/ must be vendored: Blockly's default media path is a remote URL, and
 # the injection option in blocks.js points here instead.
 cp -R "$tmp/blockly/package/media" vendor/blockly/media
+
+echo "→ micropython-wasm@${MICROPYTHON_VERSION} (the student-Python runtime — CPython-compatible enough for rover scripts, ~1/30th of Pyodide)"
+curl -fsSL "https://registry.npmjs.org/@micropython/micropython-webassembly-pyscript/-/micropython-webassembly-pyscript-${MICROPYTHON_VERSION}.tgz" -o "$tmp/mpy.tgz"
+mkdir -p "$tmp/mpy"
+tar -xzf "$tmp/mpy.tgz" -C "$tmp/mpy"
+mkdir -p vendor/micropython
+cp "$tmp/mpy/package/micropython.mjs" "$tmp/mpy/package/micropython.wasm" vendor/micropython/
 
 echo "✓ vendored. Serve the repo root (e.g. \`npx serve\`) and open /index.html"

@@ -12,10 +12,11 @@ cd "$(dirname "$0")"
 rm -rf dist-esp32
 mkdir -p dist-esp32/vendor
 
-cp index.html style.css app.js blocks.js robot-api.js dist-esp32/
+cp index.html style.css app.js blocks.js robot-api.js py-runtime.js dist-esp32/
 cp editor-lite.js dist-esp32/editor.js
 cp vendor/mqtt.min.js dist-esp32/vendor/
 cp -R vendor/blockly dist-esp32/vendor/blockly
+cp -R vendor/micropython dist-esp32/vendor/micropython
 
 total=$(du -sk dist-esp32 | cut -f1)
 gz=$(tar -czf - -C dist-esp32 . | wc -c)

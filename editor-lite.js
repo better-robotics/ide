@@ -1,8 +1,8 @@
 // The ESP32 build's editor — a plain <textarea> behind the same interface
 // editor.js exposes, so app.js is byte-identical across builds. Monaco is
 // ~15 MB of vendor tree; a 4 MB-flash hub can't carry it, and on that tier
-// the JS view is a fallback (Blocks is the primary surface). build-esp32.sh
-// ships this file AS editor.js in the slim bundle — never both.
+// the Python view is a fallback (Blocks is the primary surface).
+// build-esp32.sh ships this file AS editor.js in the slim bundle — never both.
 let textarea = null;
 
 export async function mountEditor(host, { initialValue, onRun }) {

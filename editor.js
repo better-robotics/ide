@@ -20,7 +20,7 @@ export async function mountEditor(host, { initialValue, onRun }) {
   const monaco = await loadMonaco();
   editor = monaco.editor.create(host, {
     value: initialValue,
-    language: "javascript",
+    language: "python",
     theme: "vs-dark",
     minimap: { enabled: false },
     fontSize: 14,

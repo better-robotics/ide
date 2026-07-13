@@ -1,22 +1,22 @@
-// The Blockly layer — a block vocabulary that generates the SAME JavaScript a
-// student would type in the code view (await robot.move(...), sleep(...), …),
+// The Blockly layer — a block vocabulary that generates the SAME Python a
+// student would type in the code view (await robot.move(...), sleep_ms(...)),
 // fed to the same run model in app.js. Blocks are an on-ramp to the `robot`
 // API, never a second API: if a block can't be expressed as readable
-// generated JS against robot-api.js, it doesn't belong here.
+// generated Python against py-runtime.js's prelude, it doesn't belong here.
 //
 // Reads the globals the vendored UMD bundles define (vendor/blockly/*, script
-// tags in index.html): `Blockly` and `javascript` (the JS generator).
+// tags in index.html): `Blockly` and `python` (the Python generator).
 
 const BLOCKS_KEY = "ide.blocks";
 
 let workspace = null;
 
-const generator = javascript.javascriptGenerator;
-const Order = javascript.Order;
+const generator = python.pythonGenerator;
+const Order = python.Order;
 
-// The run model injects these names (app.js runScript); a student variable
+// The runtime prelude defines these names (py-runtime.js); a student variable
 // named `robot` would shadow the real one.
-generator.addReservedWords("robot,robots,sleep,log");
+generator.addReservedWords("robot,robots,sleep_ms,_hub");
 
 const ROBOT_HUE = 217; // matches --accent
 
@@ -86,12 +86,12 @@ Blockly.defineBlocksWithJsonArray([
   },
   {
     type: "robot_log",
-    message0: "log %1",
+    message0: "print %1",
     args0: [{ type: "input_value", name: "VALUE" }],
     previousStatement: null,
     nextStatement: null,
     colour: ROBOT_HUE,
-    tooltip: "Print a value to the console pane.",
+    tooltip: "Print a value to the console pane — Python's real print().",
   },
   {
     type: "robot_telemetry",
@@ -106,27 +106,27 @@ generator.forBlock["robot_move"] = (block, gen) => {
   const left = gen.valueToCode(block, "LEFT", Order.NONE) || "0";
   const right = gen.valueToCode(block, "RIGHT", Order.NONE) || "0";
   const ms = gen.valueToCode(block, "MS", Order.NONE) || "400";
-  return `await robot.move({ left: ${left}, right: ${right}, durationMs: ${ms} });\n`;
+  return `await robot.move(left=${left}, right=${right}, duration_ms=${ms})\n`;
 };
-generator.forBlock["robot_stop"] = () => "await robot.stop();\n";
+generator.forBlock["robot_stop"] = () => "await robot.stop()\n";
 generator.forBlock["robot_wait"] = (block, gen) =>
-  `await sleep(${gen.valueToCode(block, "MS", Order.NONE) || "0"});\n`;
+  `await sleep_ms(${gen.valueToCode(block, "MS", Order.NONE) || "0"})\n`;
 
 const LED_COLORS = {
-  RED: "{ red: 255 }",
-  GREEN: "{ green: 255 }",
-  BLUE: "{ blue: 255 }",
-  YELLOW: "{ red: 255, green: 255 }",
-  MAGENTA: "{ red: 255, blue: 255 }",
-  CYAN: "{ green: 255, blue: 255 }",
-  WHITE: "{ red: 255, green: 255, blue: 255 }",
+  RED: "red=255",
+  GREEN: "green=255",
+  BLUE: "blue=255",
+  YELLOW: "red=255, green=255",
+  MAGENTA: "red=255, blue=255",
+  CYAN: "green=255, blue=255",
+  WHITE: "red=255, green=255, blue=255",
 };
 generator.forBlock["robot_led_on"] = (block) =>
-  `await robot.led(true, ${LED_COLORS[block.getFieldValue("COLOR")]});\n`;
-generator.forBlock["robot_led_off"] = () => "await robot.led(false);\n";
+  `await robot.led(True, ${LED_COLORS[block.getFieldValue("COLOR")]})\n`;
+generator.forBlock["robot_led_off"] = () => "await robot.led(False)\n";
 generator.forBlock["robot_log"] = (block, gen) =>
-  `log(${gen.valueToCode(block, "VALUE", Order.NONE) || '""'});\n`;
-generator.forBlock["robot_telemetry"] = () => ["robot.telemetry", Order.MEMBER];
+  `print(${gen.valueToCode(block, "VALUE", Order.NONE) || "''"})\n`;
+generator.forBlock["robot_telemetry"] = () => ["robot.telemetry", Order.ATOMIC];
 
 const num = (n) => ({ shadow: { type: "math_number", fields: { NUM: n } } });
 

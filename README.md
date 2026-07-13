@@ -1,10 +1,11 @@
 # ide
 
-Monaco + Blockly in the browser, driving a rover over the existing wire — the
+Python + Blockly in the browser, driving a rover over the existing wire — the
 classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub).
-Students write plain JS calling a small `robot` API — or snap blocks together
-in a Scratch-like view that generates that same JS — and the script runs
-entirely in the tab, talking to the hub over the same MQTT/WebSocket contract
+Students write Python calling a small `robot` API — or snap blocks together
+in a Scratch-like view that generates that same Python — and the script runs
+entirely in the tab (MicroPython compiled to WebAssembly; no interpreter to
+install), talking to the hub over the same MQTT/WebSocket contract
 `dashboard.html` already drives. **The rover firmware needs no changes to
 support this** — it's a second client of an existing contract, not a new
 device capability.
@@ -22,55 +23,58 @@ hub and the ESP32 hub role.
 
 | piece | job |
 |---|---|
-| `index.html` / `style.css` | the shell — connection bar, Blocks/JS toggle, editor pane, console + telemetry pane |
+| `index.html` / `style.css` | the shell — connection bar, Blocks/Python toggle, editor pane, console + telemetry pane |
 | `editor.js` | mounts vendored Monaco (AMD loader, no CDN) |
-| `blocks.js` | the Blocks view — a Blockly workspace whose generators emit the same `robot`-API JavaScript the code view teaches |
+| `blocks.js` | the Blocks view — a Blockly workspace whose generators emit the same `robot`-API Python the code view teaches |
+| `py-runtime.js` | the Python runtime — vendored MicroPython-WASM in the tab, bridged to `robot-api.js`; `print()` streams to the console pane |
 | `robot-api.js` | the wire client — `mqtt.connect(ws://<host>:9001, …)`, the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry) |
-| `app.js` | glue — connection UI, the Blocks/JS mode switch, the run-script model |
-| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly, fetched once, never loaded from a CDN at runtime |
-| `editor-lite.js` / `build-esp32.sh` → `dist-esp32/` | the ESP32-hub bundle — same app minus Monaco (a textarea ships as `editor.js`), ~400 KB gzipped so a 4 MB-flash hub can embed and serve it |
+| `app.js` | glue — connection UI, the Blocks/Python mode switch, the run-script model |
+| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly + MicroPython-WASM, fetched once, never loaded from a CDN at runtime |
+| `editor-lite.js` / `build-esp32.sh` → `dist-esp32/` | the ESP32-hub bundle — same app minus Monaco (a textarea ships as `editor.js`), small enough for a 4 MB-flash hub to embed and serve |
 
 ## Blocks mode
 
 First-time visitors land in a Blockly workspace (Scratch-like zelos renderer)
-with drive / wait / stop / LED / log / telemetry blocks plus stock loops,
+with drive / wait / stop / LED / print / telemetry blocks plus stock loops,
 logic, math, and variables. Below it, a read-only Monaco pane shows **the
-JavaScript the blocks generate, live** — the ramp from blocks to typed code is
-watching your program appear in the real API, then pressing **JS** to write it
-by hand. Blocks and JS are two separate drafts (a JS→blocks conversion would
-be lossy, so neither view can eat the other's edits); **Run executes whichever
-view is active**, through the same runner.
+Python the blocks generate, live** — the ramp from blocks to typed code is
+watching your program appear in the real API, then pressing **Python** to
+write it by hand. Blocks and Python are two separate drafts (a Python→blocks
+conversion would be lossy, so neither view can eat the other's edits); **Run
+executes whichever view is active**, through the same runner.
 
 ## The `robot` API
 
-```js
-// robot.move({left, right, durationMs}) drives; left/right are signed
-// -255..255. durationMs defaults to 400ms and clamps at 4000ms — the
-// firmware's own watchdog floor (CONTRACT.md § Safety floor), so a dropped
-// connection always coasts to a stop, never a runaway.
-await robot.move({ left: 120, right: 120, durationMs: 400 });
-await sleep(500);
-await robot.stop();
+```python
+# robot.move(left=…, right=…, duration_ms=…) drives; left/right are signed
+# -255..255. duration_ms defaults to 400 and clamps at 4000 — the firmware's
+# own watchdog floor (CONTRACT.md § Safety floor), so a dropped connection
+# always coasts to a stop, never a runaway.
+await robot.move(left=120, right=120, duration_ms=400)
+await sleep_ms(500)
+await robot.stop()
 
-// robot.telemetry reads the latest merged {imu, sys, …} sample.
-console.log(robot.telemetry);
+# robot.telemetry reads the latest merged {imu, sys, …} sample as a dict.
+print(robot.telemetry)
 
-// robot.led(on, {red, green, blue}) is best-effort: the firmware's
-// request/response correlation for set_led is an open thread
-// (hub CONTRACT.md, #4), so this resolves {ok:false, timedOut:true}
-// rather than hanging if no reply arrives.
-await robot.led(true, { green: 255 });
+# robot.led(on, red=…, green=…, blue=…) is best-effort: the firmware's
+# request/response correlation for set_led is an open thread
+# (hub CONTRACT.md, #4), so it returns rather than hanging if no reply
+# arrives. Multi-robot is a for loop over `robots`.
+await robot.led(True, green=255)
 ```
 
-Scripts run as a plain `AsyncFunction` in the page — no Worker sandbox, same
-shape [`workbench`'s runner](https://github.com/better-robotics/workbench/blob/main/docs/scripts.js)
-uses. The safety boundary is the firmware's drive watchdog, not JS isolation:
-a malformed or malicious script can't out-run the motor timeout.
+Scripts run in MicroPython compiled to WebAssembly, in the page —
+top-level `await` works, `print()` streams to the console pane, and the
+Python-side API (`Robot`, `sleep_ms`, `robots`/`robot`) is a small prelude
+over the same wire client the old JS runner used. The safety boundary is the
+firmware's drive watchdog, not interpreter sandboxing: a malformed or
+malicious script can't out-run the motor timeout.
 
 ## Run it
 
 ```sh
-./vendor.sh          # fetch Monaco + mqtt.js + Blockly into vendor/ (once, after clone)
+./vendor.sh          # fetch Monaco + mqtt.js + Blockly + MicroPython into vendor/ (once, after clone)
 npx serve .           # or: python3 -m http.server
 ```
 

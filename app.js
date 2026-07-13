@@ -1,20 +1,23 @@
 import { connect } from "./robot-api.js";
 import { mountEditor, getValue, setValue, setReadOnly } from "./editor.js";
 import { mountBlocks, getBlocksCode, resizeBlocks, blocksMounted } from "./blocks.js";
+import { runPython } from "./py-runtime.js";
 
-const DRAFT_KEY = "ide.draft";
+// "-py" so drafts from the JS-language era (pre-Python swap) can't load as
+// Python and greet a returning student with a SyntaxError.
+const DRAFT_KEY = "ide.draft-py";
 const HOST_KEY = "ide.host";
 const CREDS_KEY = "ide.creds"; // {username} only — never persist the password
 const MODE_KEY = "ide.mode"; // "blocks" | "code"
 
-const DEFAULT_SCRIPT = `// robot.move({left, right, durationMs}) drives; left/right are signed
-// -255..255, durationMs defaults to 400 and clamps at 4000 (the firmware's
-// watchdog floor — CONTRACT.md § Safety floor). robot.telemetry reads the
-// latest imu/sys sample. Ctrl/Cmd-Enter runs.
-await robot.move({ left: 120, right: 120, durationMs: 400 });
-await sleep(500);
-await robot.stop();
-log("done");
+const DEFAULT_SCRIPT = `# robot.move(left=…, right=…, duration_ms=…) drives; left/right are signed
+# -255..255, duration_ms defaults to 400 and clamps at 4000 (the firmware's
+# watchdog floor — CONTRACT.md § Safety floor). robot.telemetry reads the
+# latest imu/sys sample. Ctrl/Cmd-Enter runs.
+await robot.move(left=120, right=120, duration_ms=400)
+await sleep_ms(500)
+await robot.stop()
+print("done")
 `;
 
 let session = null;
@@ -76,7 +79,7 @@ async function doConnect() {
 // the same file would eat hand edits. Run executes whichever view is active.
 function refreshPreview() {
   if (mode !== "blocks") return;
-  setValue("// the JavaScript your blocks make\n" + getBlocksCode());
+  setValue("# the Python your blocks make\n" + getBlocksCode());
 }
 
 function setMode(next) {
@@ -119,33 +122,17 @@ async function runScript() {
 
   const body = mode === "blocks" ? getBlocksCode() : getValue();
   if (mode === "code") localStorage.setItem(DRAFT_KEY, body);
-  // A team's own robot (session.ownId) is known the moment we're connected —
-  // list it first regardless of whether telemetry has arrived yet, so
-  // `robot` (robots[0]) is never null just because the rover hasn't
-  // published its first imu/sys sample.
-  const ids = session.ownId
-    ? [session.ownId, ...session.knownIds().filter((id) => id !== session.ownId)]
-    : session.knownIds();
-  const robots = ids.map(session.robot);
-  const robot = robots[0] || null;
-  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   try {
-    // AsyncFunction so a top-level `await` works in the student's script —
-    // same shape workbench/docs/scripts.js runs user code in. The safety
-    // boundary is the firmware's drive watchdog, not a JS sandbox here: a
-    // malformed or malicious script can't out-run the motor timeout.
-    const fn = new (Object.getPrototypeOf(async function () {}).constructor)(
-      "robot",
-      "robots",
-      "sleep",
-      "log",
-      body
-    );
-    const ret = await fn(robot, robots, sleep, log);
-    if (ret !== undefined) log("→", ret);
+    // MicroPython-WASM in the tab (py-runtime.js) — top-level `await` works,
+    // print() streams to the console pane. The safety boundary is the
+    // firmware's drive watchdog, not interpreter sandboxing: a malformed or
+    // malicious script can't out-run the motor timeout.
+    await runPython(body, { session, print: log });
   } catch (err) {
-    log("Error:", err.message || String(err));
+    // MicroPython surfaces student errors as a JS Error carrying the
+    // Python traceback text — show it whole, it's the teaching signal.
+    log(err.message || String(err));
   } finally {
     running = false;
     runBtn.disabled = false;

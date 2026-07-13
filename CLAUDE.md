@@ -1,9 +1,20 @@
 # ide — project context
 
 The classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub):
-Monaco + a thin `robot` API, running entirely in the browser tab, talking to a
-hub over its existing MQTT/WebSocket contract. See `README.md` for the pitch;
-this file is implementation conventions.
+Blockly + Monaco + a thin Python `robot` API, running entirely in the browser
+tab, talking to a hub over its existing MQTT/WebSocket contract. See
+`README.md` for the pitch; this file is implementation conventions.
+
+## Python is the student language (team decision)
+
+Students write Python (or blocks that generate it) — the Better Robotics
+team's platform decision (server-side Python; see `duke/robotics/CLAUDE.md`
+§ V1 Roadmap). The browser stays the interpreter so zero-install holds:
+`py-runtime.js` runs vendored **MicroPython-WASM** (~550 KB vs Pyodide's
+~10 MB — small enough that the ESP32 hub serves it too). JS survives only as
+implementation (`robot-api.js`, the shell) — no student-facing JS surface,
+and the JS-era draft key is retired (`ide.draft-py`) so old drafts can't load
+as Python.
 
 ## The one rule this repo exists to prove
 
@@ -17,8 +28,10 @@ from a code editor instead of a joystick.
 
 ## No CDN, ever, at runtime
 
-`vendor.sh` fetches Monaco (`min/vs`, AMD loader), mqtt.js (UMD bundle), and
-Blockly (UMD bundles + `msg/en` + `media/`) into `vendor/` — gitignored,
+`vendor.sh` fetches Monaco (`min/vs`, AMD loader), mqtt.js (UMD bundle),
+Blockly (UMD bundles + `msg/en` + `media/`), and MicroPython-WASM
+(`micropython.mjs` + `.wasm` — servers must send `.mjs` as JS and `.wasm` as
+`application/wasm`, or the ES-module import fails) into `vendor/` — gitignored,
 fetched once locally, and re-fetched by CI before publishing. The classroom
 hub has no internet uplink; a page that reaches out to a CDN mid-session
 breaks the exact case this project is for. (Workbench's own editor pane
@@ -40,22 +53,25 @@ added to the editor interface must be implemented in BOTH editor files.
 
 ## Blocks view — an on-ramp, not a second API
 
-`blocks.js` generators must emit the same readable JS a student would type
-against `robot-api.js` (`await robot.move({...})`, `sleep`, `log`) — if a
-block needs anything the code view doesn't teach, it doesn't belong. Blocks
-and JS are two separate localStorage drafts (`ide.blocks` / `ide.draft`),
-never two views of one document: blocks→JS is the read-only preview under the
-workspace; JS→blocks doesn't exist (lossy). Run executes whichever view is
-active through the same `AsyncFunction` runner.
+`blocks.js` generators must emit the same readable Python a student would
+type against the runtime prelude (`await robot.move(left=…)`, `sleep_ms`,
+`print`) — if a block needs anything the code view doesn't teach, it doesn't
+belong. Blocks and Python are two separate localStorage drafts (`ide.blocks`
+/ `ide.draft-py`), never two views of one document: blocks→Python is the
+read-only preview under the workspace; Python→blocks doesn't exist (lossy).
+Run executes whichever view is active through the same MicroPython runner.
 
 ## Run model — no sandbox, and that's deliberate
 
-Student scripts run as a plain `AsyncFunction` in the page (`app.js`
-`runScript`), not a Worker or an `iframe` sandbox. The safety boundary is the
-firmware's per-message drive watchdog (400ms default / 4000ms clamp,
-`rover_role.c` `motor_apply`) — it holds against a malformed *or* malicious
-payload by design (CONTRACT.md § Safety floor), so the browser side doesn't
-need its own isolation to keep a bad script from running a rover away.
+Student scripts run in the page's MicroPython interpreter (`py-runtime.js`
+`runPython`; one interpreter per page lifetime, REPL semantics — the prelude
+re-binds `robot`/`robots` fresh each run). Structured data crosses the
+JS↔Python bridge as JSON strings, never JsProxy graphs, so tracebacks stay
+Python-shaped; student line numbers are offset by `PRELUDE_LINES`. The safety
+boundary is the firmware's per-message drive watchdog (400ms default / 4000ms
+clamp, `rover_role.c` `motor_apply`) — it holds against a malformed *or*
+malicious payload by design (CONTRACT.md § Safety floor), so the browser side
+doesn't need its own isolation to keep a bad script from running a rover away.
 
 ## Envelope contract — read `hub/CONTRACT.md` first
 

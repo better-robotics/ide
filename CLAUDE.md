@@ -28,6 +28,16 @@ keep pointing injection at `vendor/blockly/media/`; and its UMD wrappers take
 the AMD branch if `window.define` exists, which Monaco's loader defines — the
 script ordering that prevents this is commented in `index.html`.
 
+## Two builds, one app
+
+`build-esp32.sh` stages `dist-esp32/`: the identical app with
+`editor-lite.js` (a textarea behind `editor.js`'s exact interface) shipped
+*as* `editor.js`, and no Monaco — ~400 KB gzipped, sized for embedding in the
+ESP32 hub role's firmware (`better-robotics/robot`, 4 MB flash). Build-time
+file selection keeps runtime code free of per-destination logic; anything
+added to the editor interface must be implemented in BOTH editor files.
+`release.yml` publishes it as a second asset, `ide-esp32-dist.tar.gz`.
+
 ## Blocks view — an on-ramp, not a second API
 
 `blocks.js` generators must emit the same readable JS a student would type

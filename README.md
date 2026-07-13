@@ -28,6 +28,7 @@ hub and the ESP32 hub role.
 | `robot-api.js` | the wire client — `mqtt.connect(ws://<host>:9001, …)`, the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry) |
 | `app.js` | glue — connection UI, the Blocks/JS mode switch, the run-script model |
 | `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly, fetched once, never loaded from a CDN at runtime |
+| `editor-lite.js` / `build-esp32.sh` → `dist-esp32/` | the ESP32-hub bundle — same app minus Monaco (a textarea ships as `editor.js`), ~400 KB gzipped so a 4 MB-flash hub can embed and serve it |
 
 ## Blocks mode
 

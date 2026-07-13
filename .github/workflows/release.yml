@@ -1,0 +1,32 @@
+name: Release dist
+
+# Tag ide-vN to cut a release with the full built site (source + vendored
+# Monaco/mqtt.js) as one tarball — hub/pi's install.sh and customize-image.sh
+# fetch it to serve at /ide/. Same tag-gated shape as hub's own
+# release-mcpb.yml / build-image.yml (pi-image-vN). A plain git-archive
+# tarball of this repo won't do: vendor/ is gitignored (fetched, not
+# committed — see vendor.sh), so the release asset is the only artifact that
+# carries the full static site.
+
+on:
+  push:
+    tags: ['ide-v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./vendor.sh
+      - run: tar -czf ide-dist.tar.gz --exclude=.git --exclude=.github .
+      - env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME:-manual-$(git rev-parse --short HEAD)}"
+          gh release create "$tag" --repo "${{ github.repository }}" \
+            --title "$tag" --generate-notes ide-dist.tar.gz \
+            || gh release upload "$tag" ide-dist.tar.gz --repo "${{ github.repository }}" --clobber

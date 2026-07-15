@@ -1,13 +1,20 @@
 :root {
   color-scheme: dark;
-  --bg: #1e1e1e;
-  --panel: #252526;
-  --ink: #d4d4d4;
-  --ink-dim: #8a8a8a;
-  --accent: #3b82f6;
-  --ok: #4ade80;
-  --error: #f87171;
-  --border: #3c3c3c;
+  /* Shared with hub/dashboard.html + better-robotics.github.io + workbench —
+     same Duke-blue family, same neutrals. Monaco's own vs-dark theme is a
+     third-party surface and stays as-is; this token set is the app chrome. */
+  --bg: #1a1d20;
+  --panel: #212529;
+  --ink: #e9ecef;
+  --ink-dim: #adb5bd;
+  --accent: #00539B;
+  --accent-text: #0577B1;
+  --accent-soft: rgba(5,119,177,0.16);
+  --ok: #30d158;
+  --error: #ff453a;
+  --border: rgba(255,255,255,0.10);
+  --radius: 8px;
+  --radius-pill: 999px;
 }
 
 * { box-sizing: border-box; }
@@ -17,7 +24,7 @@ html, body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
@@ -52,7 +59,7 @@ input, button {
   background: var(--panel);
   color: var(--ink);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   padding: 0.35rem 0.6rem;
 }
 
@@ -64,12 +71,12 @@ button {
   cursor: pointer;
 }
 
-button:hover { border-color: var(--accent); }
+button:hover { border-color: var(--accent-text); }
 button:disabled { opacity: 0.6; cursor: default; }
 
 .chip {
   padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--panel);
   border: 1px solid var(--border);
   font-size: 0.8rem;
@@ -77,7 +84,7 @@ button:disabled { opacity: 0.6; cursor: default; }
 }
 .chip.ok { color: var(--ok); border-color: var(--ok); }
 .chip.error { color: var(--error); border-color: var(--error); }
-.chip.pending { color: var(--accent); border-color: var(--accent); }
+.chip.pending { color: var(--accent-text); border-color: var(--accent-text); }
 
 main {
   flex: 1;
@@ -108,8 +115,8 @@ main {
 
 .pane-bar button[aria-pressed="true"] {
   color: var(--ink);
-  border-color: var(--accent);
-  background: #1d2d50;
+  border-color: var(--accent-text);
+  background: var(--accent-soft);
 }
 
 #blockly {
@@ -143,7 +150,7 @@ main {
   font-size: 0.85rem;
   padding: 0.5rem 0.75rem;
 }
-#editor-lite:focus { outline: 1px solid var(--accent); outline-offset: -1px; }
+#editor-lite:focus { outline: 1px solid var(--accent-text); outline-offset: -1px; }
 
 /* Blocks mode: workspace on top, generated-JS preview (read-only Monaco)
    below — the ramp from blocks to typed code. */
@@ -178,7 +185,7 @@ main {
   font-size: 0.8rem;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   padding: 0.5rem;
   min-height: 6rem;
   max-height: 40%;
@@ -190,7 +197,7 @@ main {
   font-size: 0.75rem;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius);
   padding: 0.5rem;
   margin: 0;
   overflow: auto;

@@ -18,7 +18,7 @@ const Order = python.Order;
 // named `robot` would shadow the real one.
 generator.addReservedWords("robot,robots,sleep_ms,_hub");
 
-const ROBOT_HUE = 217; // matches --accent
+const ROBOT_HUE = 208; // matches --accent (#00539B, the house Duke-blue token)
 
 Blockly.defineBlocksWithJsonArray([
   {

@@ -11,10 +11,14 @@
 <body>
   <header>
     <h1>ide</h1>
+    <!-- No team/password. Every hub admits every client with no MQTT auth at
+         all (hub CONTRACT.md § Discovery & isolation: anonymous carries rw on
+         robots/#, and the rover firmware sends no credentials either). Only
+         `professor` needs a password, and only to write fleet/estop — which
+         this app never touches. These fields asked for something the broker
+         stopped wanting on 2026-07-13. -->
     <form id="conn-form" class="conn">
       <input id="host-input" placeholder="hub host (e.g. hub.local)" aria-label="Hub host" autocomplete="off">
-      <input id="team-input" placeholder="team" aria-label="Team username" autocomplete="off">
-      <input id="pass-input" type="password" placeholder="password" aria-label="Team password" autocomplete="off">
       <button id="connect-btn" type="submit">Connect</button>
       <span id="status-chip" class="chip" role="status" aria-live="polite">disconnected</span>
     </form>

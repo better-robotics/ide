@@ -78,9 +78,16 @@ malicious script can't out-run the motor timeout.
 npx serve .           # or: python3 -m http.server
 ```
 
-Open the served URL, point **Hub host** at your hub (`hub.local`, or the Pi's
-address), sign in with a team or professor credential (same accounts the
-dashboard uses — CONTRACT.md's ACL model), and Connect.
+Open the served URL and point **Hub host** at your hub (`hub.local`, or the
+Pi's address). There is nothing to sign in to: every hub admits every client
+with no MQTT auth at all — anonymous carries read+write on `robots/#`, and the
+rover firmware sends no credentials either (hub `CONTRACT.md` § Discovery &
+isolation). Only `professor` needs a password, and only to write `fleet/estop`,
+which this app never touches.
+
+Served by a hub, it connects on load — the page's own origin *is* the broker's
+host, so there is nothing left to ask. The GitHub Pages copy still needs a host
+typed in: that origin has no broker of its own.
 
 ## Where this is served
 

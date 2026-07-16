@@ -223,25 +223,37 @@ const DEFAULT_WORKSPACE = {
   },
 };
 
-const DARK_THEME = Blockly.Theme.defineTheme("ide-dark", {
-  base: Blockly.Themes.Classic,
-  componentStyles: {
-    workspaceBackgroundColour: "#1e1e1e",
-    toolboxBackgroundColour: "#252526",
-    toolboxForegroundColour: "#d4d4d4",
-    flyoutBackgroundColour: "#252526",
-    flyoutForegroundColour: "#d4d4d4",
-    flyoutOpacity: 0.95,
-    scrollbarColour: "#3c3c3c",
-    insertionMarkerColour: "#d4d4d4",
-    cursorColour: "#3b82f6",
-  },
-});
+// Read the tokens, don't copy them. style.css :root is the one place these
+// values live, and Blockly writes several of them as SVG fill attributes where
+// `var(--x)` never resolves — so resolve here and hand Blockly the literal.
+// Copying hex is what let this theme drift to VS Code's palette (#1e1e1e /
+// #252526 / #d4d4d4) with a Tailwind cursor (#3b82f6) inside a Duke-blue app.
+const tok = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Built on first mount, not at import: getComputedStyle is only meaningful once
+// the stylesheet has applied. Memoised because defineTheme collides on re-use.
+let darkTheme;
+function theme() {
+  return (darkTheme ??= Blockly.Theme.defineTheme("ide-dark", {
+    base: Blockly.Themes.Classic,
+    componentStyles: {
+      workspaceBackgroundColour: tok("--bg"),
+      toolboxBackgroundColour: tok("--panel"),
+      toolboxForegroundColour: tok("--ink"),
+      flyoutBackgroundColour: tok("--panel"),
+      flyoutForegroundColour: tok("--ink"),
+      flyoutOpacity: 0.95,
+      scrollbarColour: tok("--inset"),
+      insertionMarkerColour: tok("--ink"),
+      cursorColour: tok("--accent-text"),
+    },
+  }));
+}
 
 export function mountBlocks(host, { onChange } = {}) {
   workspace = Blockly.inject(host, {
     toolbox: TOOLBOX,
-    theme: DARK_THEME,
+    theme: theme(),
     // Vendored — Blockly's default media path is a remote URL, which the
     // offline classroom hub can't reach.
     media: "vendor/blockly/media/",

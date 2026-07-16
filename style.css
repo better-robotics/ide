@@ -2,9 +2,13 @@
   color-scheme: dark;
   /* Shared with hub/dashboard.html + better-robotics.github.io + workbench —
      same Duke-blue family, same neutrals. Monaco's own vs-dark theme is a
-     third-party surface and stays as-is; this token set is the app chrome. */
+     third-party surface and stays as-is; this token set is the app chrome.
+     Blockly is NOT third-party here: its palette is ours (blocks.js reads these
+     very values), so it belongs to this set. Names differ from the hub's
+     (--panel there is --surface) but every value below is identical to it. */
   --bg: #1a1d20;
   --panel: #212529;
+  --inset: #2a3037;   /* a fill INSIDE a panel — depth reads by fill, not outline */
   --ink: #e9ecef;
   --ink-dim: #adb5bd;
   --accent: #00539B;
@@ -53,6 +57,15 @@ h1 {
   align-items: center;
   flex-wrap: wrap;
 }
+
+/* Framed inside the hub dashboard's Code panel: the shell already carries the
+   host, the identity and the section's own title, so our header would repeat
+   all three in a smaller voice. The status chip survives — "am I actually
+   talking to a rover" is ours to answer, and no shell can answer it for us —
+   and moves to the pane bar, beside the controls it qualifies. */
+.embedded > header { display: none; }
+.embedded .pane-bar { justify-content: flex-start; }
+.embedded #status-chip { margin-left: auto; }
 
 input, button {
   font: inherit;

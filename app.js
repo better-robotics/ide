@@ -7,7 +7,6 @@ import { runPython } from "./py-runtime.js";
 // Python and greet a returning student with a SyntaxError.
 const DRAFT_KEY = "ide.draft-py";
 const HOST_KEY = "ide.host";
-const CREDS_KEY = "ide.creds"; // {username} only — never persist the password
 const MODE_KEY = "ide.mode"; // "blocks" | "code"
 
 const DEFAULT_SCRIPT = `# robot.move(left=…, right=…, duration_ms=…) drives; left/right are signed
@@ -50,13 +49,12 @@ function renderTelemetry(id, data) {
 
 async function doConnect() {
   const host = $("host-input").value.trim() || location.hostname;
-  const username = $("team-input").value.trim();
-  const password = $("pass-input").value;
   localStorage.setItem(HOST_KEY, host);
-  localStorage.setItem(CREDS_KEY, JSON.stringify({ username }));
 
   setStatus("connecting…", "pending");
-  const s = connect(host, { username, password });
+  // No credentials at all — not empty ones. An empty username is still a
+  // username on the wire; the rover firmware sends none, and so do we.
+  const s = connect(host);
   s.client.on("error", (err) => {
     setStatus("connect error", "error");
     log("connect error:", err.message);
@@ -149,10 +147,20 @@ function defaultHost() {
   return /\.github\.io$/.test(location.hostname) ? "hub.local" : location.hostname;
 }
 
+// Framed by the hub dashboard's Code panel: the shell above already names the
+// host and carries the identity, so our own header would be a second, emptier
+// copy of chrome the user is already looking at.
+const embedded = window.self !== window.top;
+
 async function init() {
   $("host-input").value = localStorage.getItem(HOST_KEY) || defaultHost();
-  const savedCreds = JSON.parse(localStorage.getItem(CREDS_KEY) || "{}");
-  if (savedCreds.username) $("team-input").value = savedCreds.username;
+  if (embedded) {
+    document.body.classList.add("embedded");
+    // The chip lives inside the header we're hiding, so it MOVES rather than
+    // getting restyled — "am I actually talking to a rover" is the one thing in
+    // that header no shell can answer on our behalf.
+    document.querySelector(".pane-bar").appendChild($("status-chip"));
+  }
 
   $("conn-form").addEventListener("submit", (e) => {
     e.preventDefault();
@@ -177,6 +185,13 @@ async function init() {
     localStorage.getItem(MODE_KEY) ||
       (localStorage.getItem(DRAFT_KEY) ? "code" : "blocks")
   );
+
+  // Connect on load wherever the host needs no asking: hubd serving this page
+  // means location.hostname IS the hub, and there are no credentials left to
+  // collect, so a Connect click was a button that only ever had one answer.
+  // The GH Pages copy is the exception — its origin has no broker, and the
+  // hub.local guess would fail on load in front of someone just browsing.
+  if (!/\.github\.io$/.test(location.hostname) && location.hostname) doConnect();
 }
 
 init();

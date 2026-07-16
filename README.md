@@ -82,7 +82,7 @@ Open the served URL and point **Hub host** at your hub (`hub.local`, or the
 Pi's address). There is nothing to sign in to: every hub admits every client
 with no MQTT auth at all — anonymous carries read+write on `robots/#`, and the
 rover firmware sends no credentials either (hub `CONTRACT.md` § Discovery &
-isolation). Only `professor` needs a password, and only to write `fleet/estop`,
+isolation). Only `instructor` needs a password, and only to write `fleet/estop`,
 which this app never touches.
 
 Served by a hub, it connects on load — the page's own origin *is* the broker's

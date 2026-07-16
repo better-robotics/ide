@@ -17,9 +17,9 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
     for (const fn of listeners) fn(id, snapshot);
   }
 
-  // Team logins see only their own rover's subtree; professor/anonymous
+  // Team logins see only their own rover's subtree; instructor/anonymous
   // (blank username) see the whole fleet — same scoping dashboard.html uses.
-  const filter = !username || username === "professor" ? "robots/+/#" : `robots/${username}/#`;
+  const filter = !username || username === "instructor" ? "robots/+/#" : `robots/${username}/#`;
 
   const ready = new Promise((resolve, reject) => {
     client.on("connect", () => {
@@ -98,9 +98,9 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
     ready,
     // A team login's own username IS its robot's id (robots/<team>/… — the
     // topic scheme, CONTRACT.md § Discovery & isolation) — known the moment
-    // Connect succeeds, no telemetry required. null for professor/anonymous,
+    // Connect succeeds, no telemetry required. null for instructor/anonymous,
     // which have no single robot of their own.
-    ownId: !username || username === "professor" ? null : username,
+    ownId: !username || username === "instructor" ? null : username,
     onTelemetry: (fn) => listeners.add(fn),
     // Robots we've actually heard telemetry FROM — real for a fleet view,
     // but empty right after connect if nothing has published yet.

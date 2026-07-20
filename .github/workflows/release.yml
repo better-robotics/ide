@@ -25,14 +25,14 @@ jobs:
       # Tarball must land outside the tree it's archiving — tar aborts
       # ("file changed as we read it") if the output file is a sibling of
       # the inputs and gets created mid-read.
-      - run: tar -czf /tmp/ide-dist.tar.gz --exclude=.git --exclude=.github --exclude=dist-esp32 .
-      # The ESP32-hub bundle: same app minus Monaco (editor-lite.js ships as
-      # editor.js) — small enough to embed in a 4 MB-flash hub's firmware.
-      - run: ./build-esp32.sh && tar -czf /tmp/ide-esp32-dist.tar.gz -C dist-esp32 .
+      # (The ide-esp32-dist.tar.gz asset is gone: the ESP32 hub stopped
+      # embedding the bundle 2026-07-16 and now serves shell.html, which
+      # loads this same full site from GitHub Pages at runtime.)
+      - run: tar -czf /tmp/ide-dist.tar.gz --exclude=.git --exclude=.github .
       - env:
           GH_TOKEN: ${{ github.token }}
         run: |
           tag="${GITHUB_REF_NAME:-manual-$(git rev-parse --short HEAD)}"
           gh release create "$tag" --repo "${{ github.repository }}" \
-            --title "$tag" --generate-notes /tmp/ide-dist.tar.gz /tmp/ide-esp32-dist.tar.gz \
-            || gh release upload "$tag" /tmp/ide-dist.tar.gz /tmp/ide-esp32-dist.tar.gz --repo "${{ github.repository }}" --clobber
+            --title "$tag" --generate-notes /tmp/ide-dist.tar.gz \
+            || gh release upload "$tag" /tmp/ide-dist.tar.gz --repo "${{ github.repository }}" --clobber

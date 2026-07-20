@@ -29,8 +29,8 @@ hub and the ESP32 hub role.
 | `py-runtime.js` | the Python runtime — vendored MicroPython-WASM in the tab, bridged to `robot-api.js`; `print()` streams to the console pane |
 | `robot-api.js` | the wire client — `mqtt.connect(ws://<host>:9001, …)`, the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry) |
 | `app.js` | glue — connection UI, the Blocks/Python mode switch, the run-script model |
-| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly + MicroPython-WASM, fetched once, never loaded from a CDN at runtime |
-| `editor-lite.js` / `build-esp32.sh` → `dist-esp32/` | the ESP32-hub bundle — same app minus Monaco (a textarea ships as `editor.js`), small enough for a 4 MB-flash hub to embed and serve |
+| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly + MicroPython-WASM, fetched once, never loaded from a third-party CDN at runtime |
+| `shell.html` | the ESP32-hub loader — a ~2 KB stub the firmware serves at `/ide/` that fetches this app live from GitHub Pages and runs it under the hub's own `http://` origin (where `ws://` is allowed; the Pages copy itself, being `https://`, is not allowed to open it) |
 
 ## Blocks mode
 
@@ -86,23 +86,28 @@ isolation). Only `instructor` needs a password, and only to write `fleet/estop`,
 which this app never touches.
 
 Served by a hub, it connects on load — the page's own origin *is* the broker's
-host, so there is nothing left to ask. The GitHub Pages copy still needs a host
-typed in: that origin has no broker of its own.
+host, so there is nothing left to ask. A `?host=` query param prefills the
+host field, so a link can carry the hub. The GitHub Pages copy can't reach a
+hub at all: it is `https://`, and browsers block an `https` page from opening
+`ws://` (mixed content) — use a hub-served `/ide/` for driving robots, and the
+Pages copy for browsing the editor itself.
 
 ## Where this is served
 
 Static-dist only, no build step at serve time (`vendor.sh` is the only fetch,
-and it's a pre-publish step, not a runtime one) — same discipline as
-`dashboard.html` being vendored into both the Pi hub and the ESP32 hub role so
-a classroom works with zero internet uplink:
+and it's a pre-publish step, not a runtime one):
 
-- **GH Pages** (`better-robotics.github.io/ide`) — the tiers with no Pi at
-  all: solo/home (a rover as its own island hub) and the small-group ESP32-hub
-  tier, plus dev preview.
-- **The Pi hub** (`hub.local/ide`) — the classroom-primary channel, planned:
-  retarget `hubd`'s `HUB_IDE_DIR` (today serving workbench's `docs/` bundle)
-  at this repo's build output, so it works with no internet uplink. Not yet
-  wired — needs this repo pushed with a built artifact first.
+- **The Pi hub** (`hub.local/ide`) — the classroom-primary channel: `hubd`
+  serves the full bundle from `HUB_IDE_DIR` (installed from the `ide-v*`
+  release asset), so a classroom works with zero internet uplink.
+- **The ESP32 hub** (`rover-xxxx.local/ide`) — the firmware serves
+  `shell.html`, which loads the app from GH Pages at runtime. Online-only by
+  design: the chip's 4 MB flash can't carry the bundle, and browsers won't
+  let the Pages copy open `ws://` to a local hub directly (mixed content) —
+  the stub-under-`http://` shape is what threads that.
+- **GH Pages** (`better-robotics.github.io/ide`) — the canonical online
+  copy: dev preview, and the asset origin the ESP32 shell loads from. Typing
+  a hub host here can't connect (see above); use the hub's own `/ide/`.
 
 ## Falsifiability (build kill-criterion)
 

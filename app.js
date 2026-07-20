@@ -153,7 +153,15 @@ function defaultHost() {
 const embedded = window.self !== window.top;
 
 async function init() {
-  $("host-input").value = localStorage.getItem(HOST_KEY) || defaultHost();
+  // A shared link can carry the hub (/ide/?host=rover-abc.local): the link's
+  // whole point is naming the host, so it outranks the remembered one —
+  // which Connect then overwrites, persisting the link's host like any typed
+  // host. On the Pages copy it only prefills: auto-connect stays off there,
+  // since an https page can't open ws:// (mixed content) no matter what the
+  // param says.
+  const urlHost = new URLSearchParams(location.search).get("host");
+  $("host-input").value =
+    urlHost || localStorage.getItem(HOST_KEY) || defaultHost();
   if (embedded) {
     document.body.classList.add("embedded");
     // The chip lives inside the header we're hiding, so it MOVES rather than

@@ -1,10 +1,12 @@
-// The wire client — connects to a hub's MQTT-over-WebSocket broker
-// (CONTRACT.md § Discovery & isolation, port 9001 on both the Pi and the
-// ESP32 hub role) and speaks the SAME envelope contract dashboard.html
-// drives: pwm (envelopes/pwm.json), the set_led RPC (envelopes/rpc_set_led.json),
-// imu/sys telemetry. Nothing here is a new device capability — this is a
-// second client of an existing contract, so the rover firmware needs no
-// changes to support it.
+// The wire client — reaches a hub over the WS-JSON adapter (port 9001 on both
+// the Pi and the ESP32 hub role; CONTRACT.md § Discovery & isolation), which
+// bridges to the hub's Zenoh fabric. It speaks the SAME envelope contract
+// dashboard.html drives: pwm (envelopes/pwm.json), the set_led queryable
+// (envelopes/rpc_set_led.json), imu/sys telemetry. Nothing here is a new device
+// capability — this is a second client of an existing contract, so the rover
+// firmware needs no changes to support it. The transport is a drop-in mqtt.js
+// shape (zenoh-transport.js), so the code below reads unchanged from the MQTT
+// era except set_led, which is now the contract's queryable get, not a pub.
 //
 // A board has TWO ids, and which one is the handle depends on the login
 // (CONTRACT.md § Addressing one board when several share an identity):
@@ -19,8 +21,10 @@
 // the whole `unassigned` pool answers on `robots/unassigned/*` — so there the
 // handle is the board id and every command carries `target`, or a single
 // robot.move() drives every unnamed board on the desk at once.
+import { zenohConnect } from "./zenoh-transport.js";
+
 export function connect(host, { username, password, wsPort = 9001 } = {}) {
-  const client = mqtt.connect(`ws://${host}:${wsPort}`, { username, password });
+  const client = zenohConnect(`ws://${host}:${wsPort}`, { username, password });
 
   // Fleet view sees `robots/+/#`; a team login only its own subtree — same
   // scoping dashboard.html uses. This flag is also what decides the keying
@@ -31,7 +35,6 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
   const telemetry = new Map(); // handle -> merged {channel: data}
   const topicOf = new Map();   // handle -> topic id to publish on (== handle in team mode)
   const listeners = new Set(); // fn(handle, telemetry)
-  const pendingLed = new Map(); // topic id -> {resolve, timer} — awaiting robots/<topic>/led/reply
 
   function notify(handle) {
     const snapshot = telemetry.get(handle);
@@ -55,19 +58,6 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
       data = JSON.parse(payload.toString());
     } catch {
       return; // non-JSON payload — not one of ours
-    }
-
-    if (channel === "led/reply") {
-      // The reply lands on the board's TOPIC, not its board id — only the
-      // targeted board acts, so one reply per topic. (set_led correlation is
-      // best-effort, an open thread: hub CONTRACT.md, #4.)
-      const pending = pendingLed.get(topicId);
-      if (pending) {
-        clearTimeout(pending.timer);
-        pendingLed.delete(topicId);
-        pending.resolve({ ok: true, ...data });
-      }
-      return;
     }
 
     // Which handle owns this message? Team mode: the topic id. Fleet mode: the
@@ -120,19 +110,21 @@ export function connect(host, { username, password, wsPort = 9001 } = {}) {
       async stop() {
         return this.move({ left: 0, right: 0 });
       },
-      // Best-effort: the firmware's request/response correlation for
-      // set_led is an open thread (hub CONTRACT.md, #4), so this resolves
-      // {ok:false, timedOut:true} rather than hanging if no reply arrives.
-      led(on, { red = 0, green = 0, blue = 0, timeoutMs = 1500 } = {}) {
-        return new Promise((resolve) => {
-          const replyKey = topicId(); // the reply lands on the topic, not the board id
-          const timer = setTimeout(() => {
-            pendingLed.delete(replyKey);
-            resolve({ ok: false, timedOut: true });
-          }, timeoutMs);
-          pendingLed.set(replyKey, { resolve, timer });
-          pub("led", { method: "set_led", on, red, green, blue });
-        });
+      // set_led is the contract's queryable (CONTRACT.md § the set_led
+      // queryable / envelopes/rpc_set_led.json): a `get` on robots/<id>/led
+      // carrying the request, the reply riding back as the query answer. In
+      // fleet mode the request carries `target` like a pub, so only the named
+      // board acts. Firmware support is still open thread #4, so an unanswered
+      // get resolves {ok:false, timedOut:true} rather than hanging.
+      async led(on, { red = 0, green = 0, blue = 0, timeoutMs = 1500 } = {}) {
+        const req = { method: "set_led", on, red, green, blue };
+        const body = targeted() ? { ...req, target: handle } : req;
+        try {
+          const reply = await client.get(`robots/${topicId()}/led`, body, { timeoutMs });
+          return { ok: true, ...(reply && typeof reply === "object" ? reply : {}) };
+        } catch {
+          return { ok: false, timedOut: true };
+        }
       },
       // cmd/identify — blinks the board's LED (~6s) so it can be matched to
       // its on-screen id (CONTRACT.md § Control channels).

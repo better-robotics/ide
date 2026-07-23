@@ -11,11 +11,11 @@
 <body>
   <header>
     <h1>ide</h1>
-    <!-- No team/password. Every hub admits every client with no MQTT auth at
-         all (hub CONTRACT.md § Discovery & isolation: anonymous carries rw on
-         robots/#, and the rover firmware sends no credentials either). Only
+    <!-- No team/password. Every hub admits every client with no auth at all
+         (hub CONTRACT.md § Discovery & isolation: anonymous carries rw on
+         robots/**, and the rover firmware sends no credentials either). Only
          `instructor` needs a password, and only to write fleet/estop — which
-         this app never touches. These fields asked for something the broker
+         this app never touches. These fields asked for something the hub
          stopped wanting on 2026-07-13. -->
     <form id="conn-form" class="conn">
       <input id="host-input" placeholder="hub host (e.g. hub.local)" aria-label="Hub host" autocomplete="off">
@@ -41,7 +41,6 @@
       <pre id="telemetry"></pre>
     </aside>
   </main>
-  <script src="vendor/mqtt.min.js"></script>
   <!-- Blockly's UMD wrappers take the AMD branch if window.define exists —
        and Monaco's AMD loader defines exactly that. These must stay parser
        scripts ahead of app.js (a module, so it runs after them), which is

@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
-# Fetch Monaco + mqtt.js into vendor/. The classroom hub has no internet
-# uplink, so nothing the page loads at runtime may come from a CDN — same
-# discipline as sdflash's extension/vendor.sh. Run once after clone (and
-# again by CI before publishing), before opening index.html.
+# Fetch Monaco + Blockly + MicroPython into vendor/. The classroom hub has no
+# internet uplink, so nothing the page loads at runtime may come from a CDN —
+# same discipline as sdflash's extension/vendor.sh. Run once after clone (and
+# again by CI before publishing), before opening index.html. (The hub transport
+# needs no vendored lib: robot-api.js talks the WS-JSON adapter over a raw
+# WebSocket — see zenoh-transport.js — so mqtt.js is no longer fetched.)
 set -euo pipefail
 cd "$(dirname "$0")"
 
 MONACO_VERSION=0.55.1
-MQTT_VERSION=5.15.2
 BLOCKLY_VERSION=12.3.1
 MICROPYTHON_VERSION=1.28.0-6   # @micropython/micropython-webassembly-pyscript
 
@@ -21,9 +22,6 @@ curl -fsSL "https://registry.npmjs.org/monaco-editor/-/monaco-editor-${MONACO_VE
 tar -xzf "$tmp/monaco.tgz" -C "$tmp"
 mkdir -p vendor/monaco-editor
 cp -R "$tmp/package/min" vendor/monaco-editor/min
-
-echo "→ mqtt.js@${MQTT_VERSION} (browser UMD bundle — the same library dashboard.html inlines)"
-curl -fsSL "https://cdn.jsdelivr.net/npm/mqtt@${MQTT_VERSION}/dist/mqtt.min.js" -o vendor/mqtt.min.js
 
 echo "→ blockly@${BLOCKLY_VERSION} (UMD script bundles + en messages + media sprites)"
 curl -fsSL "https://registry.npmjs.org/blockly/-/blockly-${BLOCKLY_VERSION}.tgz" -o "$tmp/blockly.tgz"

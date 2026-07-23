@@ -5,7 +5,7 @@ classroom code editor for [`better-robotics/hub`](https://github.com/better-robo
 Students write Python calling a small `robot` API — or snap blocks together
 in a Scratch-like view that generates that same Python — and the script runs
 entirely in the tab (MicroPython compiled to WebAssembly; no interpreter to
-install), talking to the hub over the same MQTT/WebSocket contract
+install), talking to the hub over the same WS-JSON/Zenoh contract
 `dashboard.html` already drives. **The rover firmware needs no changes to
 support this** — it's a second client of an existing contract, not a new
 device capability.
@@ -14,7 +14,7 @@ device capability.
 
 [`workbench`](https://github.com/better-robotics/workbench) pairs a robot
 directly over BLE from its own bundled IDE and firmware. This project targets
-`hub`'s MQTT/WS contract instead, so it drives **any** hub — Pi or ESP32 — with
+`hub`'s WS-JSON/Zenoh contract instead, so it drives **any** hub — Pi or ESP32 — with
 zero firmware changes, and it's a second, independent front-end to
 `CONTRACT.md`, the same relationship `dashboard.html` already has with the Pi
 hub and the ESP32 hub role.
@@ -27,9 +27,10 @@ hub and the ESP32 hub role.
 | `editor.js` | mounts vendored Monaco (AMD loader, no CDN) |
 | `blocks.js` | the Blocks view — a Blockly workspace whose generators emit the same `robot`-API Python the code view teaches |
 | `py-runtime.js` | the Python runtime — vendored MicroPython-WASM in the tab, bridged to `robot-api.js`; `print()` streams to the console pane |
-| `robot-api.js` | the wire client — `mqtt.connect(ws://<host>:9001, …)`, the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry) |
+| `robot-api.js` | the wire client — the `robots/<id>/…` envelope contract (`pwm`, `led`, telemetry), over `zenoh-transport.js` |
+| `zenoh-transport.js` | the browser edge — a WebSocket to the hub's WS-JSON adapter (`ws://<host>:9001` → Zenoh), presenting a small mqtt.js-shaped client so `robot-api.js` reads unchanged |
 | `app.js` | glue — connection UI, the Blocks/Python mode switch, the run-script model |
-| `vendor.sh` → `vendor/` | Monaco + mqtt.js + Blockly + MicroPython-WASM, fetched once, never loaded from a third-party CDN at runtime |
+| `vendor.sh` → `vendor/` | Monaco + Blockly + MicroPython-WASM, fetched once, never loaded from a third-party CDN at runtime (the hub transport is a raw WebSocket — no vendored lib) |
 | `shell.html` | the ESP32-hub loader — a ~2 KB stub the firmware serves at `/ide/` that fetches this app live from GitHub Pages and runs it under the hub's own `http://` origin (where `ws://` is allowed; the Pages copy itself, being `https://`, is not allowed to open it) |
 
 ## Blocks mode
@@ -57,8 +58,8 @@ await robot.stop()
 # robot.telemetry reads the latest merged {imu, sys, …} sample as a dict.
 print(robot.telemetry)
 
-# robot.led(on, red=…, green=…, blue=…) is best-effort: the firmware's
-# request/response correlation for set_led is an open thread
+# robot.led(on, red=…, green=…, blue=…) is best-effort: set_led is the
+# contract's queryable get, and firmware support is an open thread
 # (hub CONTRACT.md, #4), so it returns rather than hanging if no reply
 # arrives. Multi-robot is a for loop over `robots`.
 await robot.led(True, green=255)
@@ -74,18 +75,18 @@ malicious script can't out-run the motor timeout.
 ## Run it
 
 ```sh
-./vendor.sh          # fetch Monaco + mqtt.js + Blockly + MicroPython into vendor/ (once, after clone)
+./vendor.sh          # fetch Monaco + Blockly + MicroPython into vendor/ (once, after clone)
 npx serve .           # or: python3 -m http.server
 ```
 
 Open the served URL and point **Hub host** at your hub (`hub.local`, or the
 Pi's address). There is nothing to sign in to: every hub admits every client
-with no MQTT auth at all — anonymous carries read+write on `robots/#`, and the
+with no auth at all — anonymous carries read+write on `robots/**`, and the
 rover firmware sends no credentials either (hub `CONTRACT.md` § Discovery &
 isolation). Only `instructor` needs a password, and only to write `fleet/estop`,
 which this app never touches.
 
-Served by a hub, it connects on load — the page's own origin *is* the broker's
+Served by a hub, it connects on load — the page's own origin *is* the hub's
 host, so there is nothing left to ask. A `?host=` query param prefills the
 host field, so a link can carry the hub. The GitHub Pages copy can't reach a
 hub at all: it is `https://`, and browsers block an `https` page from opening

@@ -2,7 +2,8 @@
 
 The classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub):
 Blockly + Monaco + a thin Python `robot` API, running entirely in the browser
-tab, talking to a hub over its existing MQTT/WebSocket contract. See
+tab, talking to a hub over its existing WS-JSON/Zenoh contract (`robot-api.js`
+over `zenoh-transport.js` → the hub's WS-JSON adapter on `:9001` → Zenoh). See
 `README.md` for the pitch; this file is implementation conventions.
 
 ## Python is the student language (team decision)
@@ -19,8 +20,8 @@ as Python.
 ## The one rule this repo exists to prove
 
 **Everything possible lives client-side; the firmware gets nothing new.** A
-script's `robot.move()`/`.led()`/`.telemetry` calls are just `mqtt.publish`/
-`subscribe` against topics `dashboard.html` already uses (`envelopes/pwm.json`,
+script's `robot.move()`/`.led()`/`.telemetry` calls are just `pub`/`sub`/`get`
+(WS-JSON ops) against the keys `dashboard.html` already uses (`envelopes/pwm.json`,
 `envelopes/rpc_set_led.json`, imu/sys). Before adding any feature that would
 need a firmware change, ask whether it can instead be expressed as an existing
 envelope from a new angle — the rover doesn't know or care that a request came
@@ -28,7 +29,7 @@ from a code editor instead of a joystick.
 
 ## No third-party CDN, ever, at runtime
 
-`vendor.sh` fetches Monaco (`min/vs`, AMD loader), mqtt.js (UMD bundle),
+`vendor.sh` fetches Monaco (`min/vs`, AMD loader),
 Blockly (UMD bundles + `msg/en` + `media/`), and MicroPython-WASM
 (`micropython.mjs` + `.wasm` — servers must send `.mjs` as JS and `.wasm` as
 `application/wasm`, or the ES-module import fails) into `vendor/` — gitignored,

@@ -1,7 +1,7 @@
 # ide
 
 Python + Blockly in the browser, driving a rover over the existing wire — the
-classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub).
+classroom code editor for [`sprocket-robotics/hub`](https://github.com/sprocket-robotics/hub).
 Students write Python calling a small `robot` API — or snap blocks together
 in a Scratch-like view that generates that same Python — and the script runs
 entirely in the tab (MicroPython compiled to WebAssembly; no interpreter to
@@ -12,7 +12,7 @@ device capability.
 
 ## How this differs from workbench
 
-[`workbench`](https://github.com/better-robotics/workbench) pairs a robot
+[`workbench`](https://github.com/sprocket-robotics/workbench) pairs a robot
 directly over BLE from its own bundled IDE and firmware. This project targets
 `hub`'s WS-JSON/Zenoh contract instead, so it drives **any** hub — Pi or ESP32 — with
 zero firmware changes, and it's a second, independent front-end to
@@ -106,7 +106,7 @@ and it's a pre-publish step, not a runtime one):
   design: the chip's 4 MB flash can't carry the bundle, and browsers won't
   let the Pages copy open `ws://` to a local hub directly (mixed content) —
   the stub-under-`http://` shape is what threads that.
-- **GH Pages** (`better-robotics.github.io/ide`) — the canonical online
+- **GH Pages** (`sprocket-robotics.github.io/ide`) — the canonical online
   copy: dev preview, and the asset origin the ESP32 shell loads from. Typing
   a hub host here can't connect (see above); use the hub's own `/ide/`.
 

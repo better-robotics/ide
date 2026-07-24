@@ -1,6 +1,6 @@
 # ide — project context
 
-The classroom code editor for [`better-robotics/hub`](https://github.com/better-robotics/hub):
+The classroom code editor for [`sprocket-robotics/hub`](https://github.com/sprocket-robotics/hub):
 Blockly + Monaco + a thin Python `robot` API, running entirely in the browser
 tab, talking to a hub over its existing WS-JSON/Zenoh contract (`robot-api.js`
 over `zenoh-transport.js` → the hub's WS-JSON adapter on `:9001` → Zenoh). See
@@ -8,7 +8,7 @@ over `zenoh-transport.js` → the hub's WS-JSON adapter on `:9001` → Zenoh). S
 
 ## Python is the student language (team decision)
 
-Students write Python (or blocks that generate it) — the Better Robotics
+Students write Python (or blocks that generate it) — the Sprocket Robotics
 team's platform decision (server-side Python; see `duke/robotics/CLAUDE.md`
 § V1 Roadmap). The browser stays the interpreter so zero-install holds:
 `py-runtime.js` runs vendored **MicroPython-WASM** (~550 KB vs Pyodide's
@@ -56,7 +56,7 @@ content), and a hub has no CA-signed cert for an mDNS name, so `wss://` can
 never exist. But mixed-content blocking keys on the *document's* scheme, not
 the subresources' origin — so `shell.html` (~2 KB, served by the firmware at
 `/ide/`) fetches `index.html` live from Pages, injects
-`<base href="https://better-robotics.github.io/ide/">`, and `document.write`s
+`<base href="https://sprocket-robotics.github.io/ide/">`, and `document.write`s
 it: every relative asset resolves to Pages (the browser supplies the TLS the
 firmware lacks), while the document stays `http://<hub>` — where
 `ws://<hub>:9001` is allowed and `location.hostname` still names the hub, so
@@ -67,7 +67,7 @@ scripts in parser order, preserving the UMD-before-AMD ordering above.
 **The contract this puts on the app:** `index.html` must stay CORS-fetchable
 (GitHub Pages sends `Access-Control-Allow-Origin: *`), keep a matchable
 `<head>`, and never grow an absolute same-origin URL (`/foo`) — those would
-resolve to the chip, not Pages. `better-robotics/robot` vendors `shell.html`
+resolve to the chip, not Pages. `sprocket-robotics/robot` vendors `shell.html`
 (`tools/sync-ide-shell.sh --check` gates drift, same shape as its dashboard
 sync). The old `dist-esp32/` lite build (editor-lite.js, a textarea standing
 in for Monaco) is gone — the shell serves the *full* editor, since the
@@ -118,7 +118,7 @@ that shell (§ above), online-only by design.
 
 ## Not in this repo (deliberately)
 
-Firmware (`better-robotics/robot`), the wire contract + Pi hub
-(`better-robotics/hub`), the standalone BLE-paired workbench IDE
-(`better-robotics/workbench` — drifting from the classroom model, not the
+Firmware (`sprocket-robotics/robot`), the wire contract + Pi hub
+(`sprocket-robotics/hub`), the standalone BLE-paired workbench IDE
+(`sprocket-robotics/workbench` — drifting from the classroom model, not the
 thing this project extends).

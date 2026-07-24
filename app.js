@@ -141,7 +141,7 @@ async function runScript() {
 // location.hostname is the right guess when hubd itself serves this page
 // (loaded from hub.local/ide/ → already "hub.local", zero config — same
 // shape dashboard.html uses). It's wrong specifically on the GH Pages copy,
-// where the origin is better-robotics.github.io and has no broker of its
+// where the origin is sprocket-robotics.github.io and has no broker of its
 // own — "hub.local" is the one hostname this project's docs always use.
 function defaultHost() {
   return /\.github\.io$/.test(location.hostname) ? "hub.local" : location.hostname;

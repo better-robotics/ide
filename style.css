@@ -1,6 +1,6 @@
 :root {
   color-scheme: dark;
-  /* Shared with hub/dashboard.html + better-robotics.github.io + workbench —
+  /* Shared with hub/dashboard.html + sprocket-robotics.github.io + workbench —
      same Duke-blue family, same neutrals. Monaco's own vs-dark theme is a
      third-party surface and stays as-is; this token set is the app chrome.
      Blockly is NOT third-party here: its palette is ours (blocks.js reads these

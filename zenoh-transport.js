@@ -8,7 +8,7 @@
 // message payloads delivered as JSON strings, and mqtt topic wildcards mapped to
 // Zenoh key-exprs (`+`→`*`, `#`→`**`). Ported from the hub dashboard's own
 // transport so both browser clients speak the adapter identically — the canonical
-// version and the protocol table live in `better-robotics/hub`
+// version and the protocol table live in `sprocket-robotics/hub`
 // (`dashboard.html` zenohConnect, `pi/ws-adapter/README.md`, `CONTRACT.md`).
 //
 // Protocol (client → adapter):

@@ -1,7 +1,7 @@
 name: Deploy Pages
 
 # Runs vendor.sh fresh (Monaco is ~15MB of mostly-unused language files —
-# unlike better-robotics.github.io/flash's small esptool bundle, that's worth
+# unlike sprocket-robotics.github.io/flash's small esptool bundle, that's worth
 # fetching at publish time rather than committing to git history) and
 # publishes the static site as a Pages artifact — no gh-pages branch, no
 # build step at serve time, matching the static-dist-only discipline the repo

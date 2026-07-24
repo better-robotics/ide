@@ -187,6 +187,19 @@ async function init() {
     initialValue: localStorage.getItem(DRAFT_KEY) || DEFAULT_SCRIPT,
     onRun: runScript,
   });
+  // Monaco is mounted, so the code view works: the R lights and the cover goes.
+  // Both letters at full strength IS the finished logo — see style.css #boot.
+  const boot = $("boot");
+  if (boot) {
+    document.querySelector(".boot-ltr.r").classList.add("lit");
+    $("boot-msg").textContent = "Ready.";
+    boot.classList.add("done");
+    // Reduced motion kills the transition, so transitionend never fires there —
+    // the timer is what actually drops the node in that case.
+    const drop = () => boot.remove();
+    boot.addEventListener("transitionend", drop, { once: true });
+    setTimeout(drop, 400);
+  }
   // Blocks for first-timers — the classroom on-ramp; anyone with a typed
   // draft from before this view existed keeps landing in JS.
   setMode(

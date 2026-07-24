@@ -107,6 +107,7 @@ main {
 
 #editor-pane {
   flex: 3;
+  position: relative;   /* containing block for the boot cover */
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -225,4 +226,59 @@ main {
      preview; the JS view still has it all. */
   #editor-pane.blocks #editor,
   #editor-pane.blocks #preview-label { display: none; }
+}
+
+/* Boot cover — the monogram completes itself while the vendor bundles land
+   (markup + rationale in index.html). Each letter is dim until its view is
+   usable, then holds at full strength: S is the brand blue, R the supporting
+   grey, exactly as in the app icon, so what resolves is the logo itself.
+
+   The pulse is the dashboard's own idle rhythm, and its STOPPING is the
+   completion signal — that is why there is no finish flourish. Under reduced
+   motion the pulse is dropped and the dim state is held statically: the same
+   treatment `.dot` gets in hub/dashboard.html, and nothing is lost, since the
+   stage is carried by the caption and by opacity, never by motion alone. */
+#boot {
+  position: absolute;
+  inset: 0;
+  /* Above Blockly's toolbox and flyout widgets. They only coexist if the
+     failsafe below fires late, but a cover that something draws through is
+     worse than no cover. */
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  background: var(--bg);
+  transition: opacity 320ms ease;
+}
+#boot.done { opacity: 0; pointer-events: none; }
+
+#boot-mark { width: 68px; height: 68px; }
+
+.boot-ltr {
+  opacity: 0.26;
+  animation: boot-pulse 1.6s ease-in-out infinite;
+  transition: opacity 380ms ease;
+}
+.boot-ltr.s { fill: var(--accent-text); }
+.boot-ltr.r { fill: var(--ink-dim); }
+.boot-ltr.lit { opacity: 1; animation: none; }
+
+@keyframes boot-pulse {
+  0%, 100% { opacity: 0.26; }
+  50%      { opacity: 0.10; }
+}
+
+#boot-msg {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--ink-dim);
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-ltr { animation: none; }
+  #boot { transition: none; }
 }
